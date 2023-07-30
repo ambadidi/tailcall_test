@@ -1,10 +1,16 @@
 use chrono::{Duration, Utc};
-use std::env;
+// use std::env;
 use std::io;
 use std::io::Write;
 use uuid::Uuid;
-
-#[derive(Debug, Clone)]
+use std::fs::write;
+use serde::Serialize;
+use serde_json::to_string_pretty;
+use std::fs::read_to_string;
+use std::error::Error;
+use serde_json::from_str;
+use serde::Deserialize;
+#[derive(Serialize, Clone,Deserialize)]
 struct Task {
     name: String,
     status: String,
@@ -23,7 +29,7 @@ impl Task {
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Serialize, Clone,Deserialize)]
 struct ListTask {
     list: Vec<Task>,
 }
@@ -38,8 +44,10 @@ impl ListTask {
 fn main() {
     // let args: Vec<String> = env::args().collect();
     // let command = &args[1];
-    let mut list_task = ListTask::new();
-
+    let mut list_task; 
+    // let mut list_task1; [1,2]
+    list_task =  read_tasks_from_file("data.json").unwrap();
+    let file_path = "data.json";
     loop {
         println!("What is your Task operation?\n[Add]\n[Update]\n[List]\n[Delete]\n");
         let mut input = String::new();
@@ -64,6 +72,10 @@ fn main() {
                             );
                             list_task.add_to_list(task.clone());
                             println!("New Task {}, Status: {}", task.name, task.status);
+                            match write_list_task_to_file(&list_task, file_path) {
+                                Ok(_) => println!("Data written to {} successfully.", file_path),
+                                Err(e) => eprintln!("Error writing data to {}: {}", file_path, e),
+                            }
                         }
                         Err(error) => println!("Error reading input: {}", error),
                     }
@@ -96,6 +108,10 @@ fn main() {
                                     Err(error) => println!("Error reading input: {}", error),
                                 }
                                 println!("Task Updated!");
+                                match write_list_task_to_file(&list_task, file_path) {
+                                    Ok(_) => println!("Data written to {} successfully.", file_path),
+                                    Err(e) => eprintln!("Error writing data to {}: {}", file_path, e),
+                                }
                             }
                             
                         }
@@ -126,6 +142,10 @@ fn main() {
                             } else {
                                 list_task.list.remove(index_to_delete as usize);
                                 println!("Task deleted!");
+                                match write_list_task_to_file(&list_task, file_path) {
+                                    Ok(_) => println!("Data written to {} successfully.", file_path),
+                                    Err(e) => eprintln!("Error writing data to {}: {}", file_path, e),
+                                }
                             }
                             
                         }
@@ -151,4 +171,32 @@ fn search_by_id(list: &ListTask,id: String) -> i32 {
         }
     } 
     return -1;
+}
+
+fn write_list_task_to_file(list_task: &ListTask, file_path: &str) -> Result<(), Box<dyn Error>> {
+    
+    let json_string = to_string_pretty(list_task)?;
+
+    
+    write(file_path, json_string)?;
+
+    Ok(())
+}
+
+
+
+
+
+fn read_tasks_from_file(file_path: &str) -> Result<ListTask, Box<dyn Error>> {
+    // Read the JSON data from the file as a string
+    let json_string = read_to_string(file_path)?;
+    // println!("dd {}",json_string);
+    if json_string.trim().is_empty() {
+        
+        return Ok(ListTask::new()); // Return an empty Vec<Task>
+    }
+    // Deserialize the JSON string into a Vec<Task>
+    let tasks:ListTask = from_str(&json_string)?;
+   // println!("here {}", tasks.len());
+    Ok(tasks)
 }
