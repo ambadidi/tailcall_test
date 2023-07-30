@@ -70,6 +70,37 @@ fn main() {
                     //
                 } else if trimmed_input == "Update" {
                     println!("test Update");
+                    print!("Provide the id to Update: ");
+                    io::stdout().flush().unwrap();
+                    let mut id_to_update = String::new();
+
+                    match io::stdin().read_line(&mut id_to_update) {
+                        Ok(_) => {
+                            
+                            let trimmed_id_to_update = id_to_update.trim();
+
+                            // Do something with the input
+                            let index_to_update = search_by_id(&list_task, trimmed_id_to_update.to_string());
+                            if index_to_update == -1 {
+                                println!("NO TASK with THIS id");
+                            } else {
+                                print!("Update name: ");
+                                io::stdout().flush().unwrap();
+                                let mut name_to_update = String::new();
+                                match io::stdin().read_line(&mut name_to_update) {
+                                    Ok(_) => {
+                                        
+                                        let trimmed_name_to_update = name_to_update.trim();
+                                        list_task.list[index_to_update as usize].name = trimmed_name_to_update.to_string();
+                                    }
+                                    Err(error) => println!("Error reading input: {}", error),
+                                }
+                                println!("Task Updated!");
+                            }
+                            
+                        }
+                        Err(error) => println!("Error reading id to Update: {}", error),
+                    }
                 } else if trimmed_input == "List" {
                     println!("List of Tasks:");
                     for task in &list_task.list {
@@ -81,18 +112,24 @@ fn main() {
                 } else if trimmed_input == "Delete" {
                     print!("Provide the id to  Delete: ");
                     io::stdout().flush().unwrap();
-                    let mut input = String::new();
+                    let mut id_to_delete = String::new();
 
-                    // Read the line of input from the user
-                    match io::stdin().read_line(&mut input) {
+                    match io::stdin().read_line(&mut id_to_delete) {
                         Ok(_) => {
-                            // Trim the input to remove the trailing newline character
-                            let trimmed_input = input.trim();
+                            
+                            let trimmed_id_to_delete = id_to_delete.trim();
 
                             // Do something with the input
-                            println!("You entered: {}", trimmed_input);
+                            let index_to_delete = search_by_id(&list_task, trimmed_id_to_delete.to_string());
+                            if index_to_delete == -1 {
+                                println!("NO TASK with THIS id");
+                            } else {
+                                list_task.list.remove(index_to_delete as usize);
+                                println!("Task deleted!");
+                            }
+                            
                         }
-                        Err(error) => println!("Error reading input: {}", error),
+                        Err(error) => println!("Error reading id to Delete: {}", error),
                     }
                     // delte from list
                     // sync
@@ -103,4 +140,15 @@ fn main() {
             Err(error) => println!("Error reading input: {}", error),
         }
     }
+}
+
+fn search_by_id(list: &ListTask,id: String) -> i32 {
+    if !list.list.is_empty() {
+        for (i, task) in list.list.iter().enumerate() {
+            if task.id_string == id {
+                return i as i32;
+            }
+        }
+    } 
+    return -1;
 }
